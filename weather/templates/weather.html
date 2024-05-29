@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Kenyan Weather App</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript">
+        function checkTaskStatus(taskId) {
+            $.ajax({
+                url: `/task_status/${taskId}/`,
+                method: 'GET',
+                success: function(data) {
+                    if (data.status === 'completed') {
+                        updateWeatherData(data.result);
+                    } else {
+                        setTimeout(function() {
+                            checkTaskStatus(taskId);
+                        }, 2000);  // Check every 2 seconds
+                    }
+                }
+            });
+        }
+
+        function updateWeatherData(result) {
+            var resultDiv = document.getElementById('result');
+            if (result.error) {
+                resultDiv.innerHTML = '<h2>Error: ' + result.error + '</h2>';
+            } else {
+                resultDiv.innerHTML = '<h2>Weather Data:</h2>' +
+                                      '<p>Location: ' + result.name + '</p>' +
+                                      '<p>Temperature: ' + result.main.temp + ' °C</p>' +
+                                      '<p>Humidity: ' + result.main.humidity + ' %</p>' +
+                                      '<p>Conditions: ' + result.weather[0].description + '</p>';
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Kenyan Weather App</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Get Weather</button>
+    </form>
+
+    <div id="result">
+        {% if result and result.task_id %}
+            <h2>Task is processing...</h2>
+            <script type="text/javascript">
+                document.addEventListener('DOMContentLoaded', function() {
+                    checkTaskStatus("{{ result.task_id }}");
+                });
+            </script>
+        {% endif %}
+    </div>
+
+    <h2>Recent Weather Data:</h2>
+    <ul>
+        {% for data in weather_data %}
+            <li>
+                Location: {{ data.location }}, Temperature: {{ data.temperature }} °C, Humidity: {{ data.humidity }} %, Conditions: {{ data.conditions }}
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
